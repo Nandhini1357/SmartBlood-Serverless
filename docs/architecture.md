@@ -120,3 +120,4 @@ sequenceDiagram
   - DynamoDB uses AWS KMS Server-Side Encryption (SSE).
   - All communication happens over TLS 1.3.
 - **Rate Limiting & DDoS Prevention**: API Gateway built-in throttling prevents denial-of-service abuse.
+

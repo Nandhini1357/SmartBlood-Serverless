@@ -1,0 +1,90 @@
+[
+  {
+    "donorId": "donor-001-o-neg",
+    "name": "Marcus Vance",
+    "email": "marcus.vance@fictional-donor.org",
+    "phone": "+1 (555) 234-5601",
+    "bloodType": "O-",
+    "city": "San Francisco, CA",
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "isAvailable": true
+  },
+  {
+    "donorId": "donor-002-o-pos",
+    "name": "Elena Rostova",
+    "email": "elena.rostova@fictional-donor.org",
+    "phone": "+1 (555) 234-5602",
+    "bloodType": "O+",
+    "city": "Oakland, CA",
+    "latitude": 37.8044,
+    "longitude": -122.2712,
+    "isAvailable": true
+  },
+  {
+    "donorId": "donor-003-a-pos",
+    "name": "Derrick Hayes",
+    "email": "derrick.hayes@fictional-donor.org",
+    "phone": "+1 (555) 234-5603",
+    "bloodType": "A+",
+    "city": "Berkeley, CA",
+    "latitude": 37.8715,
+    "longitude": -122.2730,
+    "isAvailable": true
+  },
+  {
+    "donorId": "donor-004-a-neg",
+    "name": "Sophia Zhang",
+    "email": "sophia.zhang@fictional-donor.org",
+    "phone": "+1 (555) 234-5604",
+    "bloodType": "A-",
+    "city": "Daly City, CA",
+    "latitude": 37.6879,
+    "longitude": -122.4702,
+    "isAvailable": true
+  },
+  {
+    "donorId": "donor-005-b-pos",
+    "name": "Rajesh Patel",
+    "email": "rajesh.patel@fictional-donor.org",
+    "phone": "+1 (555) 234-5605",
+    "bloodType": "B+",
+    "city": "San Mateo, CA",
+    "latitude": 37.5630,
+    "longitude": -122.3255,
+    "isAvailable": true
+  },
+  {
+    "donorId": "donor-006-b-neg",
+    "name": "Claire Dubois",
+    "email": "claire.dubois@fictional-donor.org",
+    "phone": "+1 (555) 234-5606",
+    "bloodType": "B-",
+    "city": "Palo Alto, CA",
+    "latitude": 37.4419,
+    "longitude": -122.1430,
+    "isAvailable": true
+  },
+  {
+    "donorId": "donor-007-ab-pos",
+    "name": "Lucas Silva",
+    "email": "lucas.silva@fictional-donor.org",
+    "phone": "+1 (555) 234-5607",
+    "bloodType": "AB+",
+    "city": "San Jose, CA",
+    "latitude": 37.3382,
+    "longitude": -121.8863,
+    "isAvailable": true
+  },
+  {
+    "donorId": "donor-008-ab-neg",
+    "name": "Amina Al-Mansoor",
+    "email": "amina.mansoor@fictional-donor.org",
+    "phone": "+1 (555) 234-5608",
+    "bloodType": "AB-",
+    "city": "San Francisco, CA",
+    "latitude": 37.7833,
+    "longitude": -122.4167,
+    "isAvailable": false
+  }
+]

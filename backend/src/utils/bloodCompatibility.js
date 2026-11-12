@@ -34,3 +34,4 @@ export const getCompatibleDonorBloodTypes = (recipientBloodType) => {
 export const isValidBloodType = (bloodType) => {
   return VALID_BLOOD_TYPES.includes(bloodType?.trim()?.toUpperCase());
 };
+

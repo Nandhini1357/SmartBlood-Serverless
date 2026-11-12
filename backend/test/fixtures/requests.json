@@ -1,0 +1,41 @@
+[
+  {
+    "requestId": "req-fixture-001",
+    "requesterName": "Dr. Eleanor Vance",
+    "hospitalName": "San Francisco General Trauma Center",
+    "bloodType": "O-",
+    "unitsNeeded": 3,
+    "urgencyLevel": "CRITICAL",
+    "city": "San Francisco, CA",
+    "latitude": 37.7558,
+    "longitude": -122.4047,
+    "contactPhone": "+1 (555) 890-1234",
+    "status": "PENDING"
+  },
+  {
+    "requestId": "req-fixture-002",
+    "requesterName": "Dr. Keith Morales",
+    "hospitalName": "Highland Hospital Acute Care",
+    "bloodType": "A+",
+    "unitsNeeded": 2,
+    "urgencyLevel": "URGENT",
+    "city": "Oakland, CA",
+    "latitude": 37.7997,
+    "longitude": -122.2312,
+    "contactPhone": "+1 (555) 789-5678",
+    "status": "PENDING"
+  },
+  {
+    "requestId": "req-fixture-003",
+    "requesterName": "Nurse Supervisor Taylor",
+    "hospitalName": "Stanford Medical Center",
+    "bloodType": "B-",
+    "unitsNeeded": 1,
+    "urgencyLevel": "NORMAL",
+    "city": "Palo Alto, CA",
+    "latitude": 37.4336,
+    "longitude": -122.1742,
+    "contactPhone": "+1 (555) 678-9012",
+    "status": "PENDING"
+  }
+]

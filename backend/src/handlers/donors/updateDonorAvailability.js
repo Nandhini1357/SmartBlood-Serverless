@@ -15,3 +15,4 @@ export const handler = withErrorHandler(async (event) => {
   const updated = await updateAvailability(donorId, body.isAvailable);
   return success(updated, 200, 'Availability updated successfully');
 });
+

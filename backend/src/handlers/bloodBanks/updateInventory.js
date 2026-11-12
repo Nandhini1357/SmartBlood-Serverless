@@ -15,3 +15,4 @@ export const handler = withErrorHandler(async (event) => {
   const updated = await updateBankInventory(bankId, body);
   return success(updated, 200, 'Blood bank inventory updated successfully');
 });
+

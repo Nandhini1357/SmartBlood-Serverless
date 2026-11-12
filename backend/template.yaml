@@ -221,6 +221,40 @@ Resources:
             Auth:
               Authorizer: NONE
 
+  GetBloodRequestDetailsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/requests/getRequestDetails.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /requests/{requestId}
+            Method: get
+            Auth:
+              Authorizer: NONE
+
+  RespondToRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/requests/respondToRequest.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /requests/{requestId}/respond
+            Method: post
+
   # --- Intelligent Matching Engine ---
   MatchDonorsFunction:
     Type: AWS::Serverless::Function
@@ -306,3 +340,4 @@ Outputs:
   SNSTopicArn:
     Description: "Emergency Alerts SNS Topic ARN"
     Value: !Ref EmergencyAlertsTopic
+

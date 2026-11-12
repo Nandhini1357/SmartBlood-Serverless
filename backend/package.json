@@ -5,7 +5,7 @@
   "main": "src/handlers/index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 0",
+    "test": "NODE_ENV=test node --test test/**/*.test.js",
     "lint": "eslint .",
     "sam:build": "sam build",
     "sam:local": "sam local start-api --env-vars env.json"
@@ -35,3 +35,4 @@
     "eslint": "^9.20.0"
   }
 }
+

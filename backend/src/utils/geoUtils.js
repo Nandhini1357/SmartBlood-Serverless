@@ -31,3 +31,4 @@ export const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
 
   return Math.round(distance * 100) / 100;
 };
+

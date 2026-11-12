@@ -44,3 +44,4 @@ export const Navbar = ({ currentView, onViewChange, onOpenEmergencyModal }) => {
     </header>
   );
 };
+

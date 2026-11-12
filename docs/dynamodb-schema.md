@@ -52,3 +52,4 @@ SmartBlood employs an optimized Single-Table Design to minimize AWS cost, elimin
 | 2 | Get available donors for blood type | `GSI1` | `GSI1PK = BLOOD#<type> AND begins_with(GSI1SK, 'STATUS#AVAILABLE')` |
 | 3 | Get blood request by ID | Primary Key | `PK = REQUEST#<requestId> AND SK = DETAILS` |
 | 4 | Get all inventory for a blood bank | Primary Key | `PK = BANK#<bankId> AND begins_with(SK, 'INVENTORY#')` |
+

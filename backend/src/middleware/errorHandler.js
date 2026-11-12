@@ -8,14 +8,6 @@ export const withErrorHandler = (handlerFn) => {
     try {
       return await handlerFn(event, context);
     } catch (error) {
-      console.error('Unhandled Lambda Exception:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        path: event.path,
-        httpMethod: event.httpMethod
-      });
-
       if (error.name === 'ValidationError') {
         return badRequest(error.message, error.details);
       }
@@ -27,6 +19,15 @@ export const withErrorHandler = (handlerFn) => {
       if (error.name === 'NotFoundError') {
         return notFound(error.message);
       }
+
+      // Log truly unexpected 500 internal errors
+      console.error('Unhandled Lambda Exception (500):', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        path: event.path,
+        httpMethod: event.httpMethod
+      });
 
       return internalError('An unexpected server error occurred.', error);
     }

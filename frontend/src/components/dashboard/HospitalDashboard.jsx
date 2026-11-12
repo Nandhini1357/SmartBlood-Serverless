@@ -67,3 +67,4 @@ export const HospitalDashboard = ({ onOpenEmergencyModal }) => {
     </div>
   );
 };
+

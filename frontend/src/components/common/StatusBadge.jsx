@@ -11,3 +11,4 @@ export const StatusBadge = ({ urgency }) => {
 
   return <span className={`badge ${badgeClass}`}>{level}</span>;
 };
+

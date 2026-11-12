@@ -28,3 +28,4 @@ export const updateBankInventory = async (bankId, payload) => {
   await putItem(inventoryEntity);
   return inventoryEntity;
 };
+

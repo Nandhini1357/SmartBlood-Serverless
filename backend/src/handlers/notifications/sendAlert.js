@@ -10,3 +10,4 @@ export const handler = withErrorHandler(async (event) => {
   const result = await broadcastEmergencyAlert(body);
   return success(result, 200, 'Emergency alert broadcasted successfully');
 });
+

@@ -10,3 +10,4 @@ export const handler = withErrorHandler(async (event) => {
   const request = await createBloodRequest(body);
   return created(request, 'Emergency blood request published successfully');
 });
+

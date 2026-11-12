@@ -8,3 +8,4 @@ export const snsClient = new SNSClient({
 });
 
 export const EMERGENCY_TOPIC_ARN = process.env.SNS_EMERGENCY_TOPIC_ARN;
+

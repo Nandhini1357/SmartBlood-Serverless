@@ -15,3 +15,4 @@ export const handler = withErrorHandler(async (event) => {
   const matchResults = await findMatchesForRequest(requestId, radiusKm);
   return success(matchResults);
 });
+

@@ -7,3 +7,4 @@ export const handler = withErrorHandler(async (event) => {
   const requests = await listBloodRequests(status);
   return success(requests);
 });
+

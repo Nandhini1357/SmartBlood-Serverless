@@ -68,3 +68,4 @@ export const internalError = (message = 'Internal Server Error', error = null) =
     timestamp: new Date().toISOString()
   })
 });
+

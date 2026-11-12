@@ -26,3 +26,4 @@ export const requireAuth = (event) => {
   }
   return user;
 };
+

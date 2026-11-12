@@ -168,3 +168,4 @@ export const EmergencyRequestModal = ({ isOpen, onClose, onRequestCreated }) => 
     </div>
   );
 };
+

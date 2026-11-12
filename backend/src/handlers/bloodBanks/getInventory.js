@@ -11,3 +11,4 @@ export const handler = withErrorHandler(async (event) => {
   const inventory = await getBankInventory(bankId);
   return success(inventory);
 });
+

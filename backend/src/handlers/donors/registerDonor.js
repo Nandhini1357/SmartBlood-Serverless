@@ -10,3 +10,4 @@ export const handler = withErrorHandler(async (event) => {
   const donor = await registerDonor(body);
   return created(donor, 'Donor registered successfully');
 });
+

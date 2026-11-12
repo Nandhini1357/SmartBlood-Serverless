@@ -103,6 +103,48 @@ Query active requests.
 - **Query Params**:
   - `status` (optional): `PENDING` | `FULFILLED` | `CANCELLED`
 
+### `GET /requests/{requestId}`
+Retrieve request details alongside any recorded donor responses.
+- **Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "requestId": "req-987123",
+    "hospitalName": "Metro General Hospital",
+    "bloodType": "O-",
+    "status": "PENDING",
+    "responses": []
+  }
+}
+```
+
+### `POST /requests/{requestId}/respond`
+Record a donor's response (Accept/Decline/Pledge) to an emergency blood request.
+- **Request Body**:
+```json
+{
+  "donorId": "8f8b5a12-...",
+  "status": "ACCEPTED",
+  "etaMinutes": 25,
+  "notes": "En route via US-101 South"
+}
+```
+- **Response (201 Created)**:
+```json
+{
+  "success": true,
+  "message": "Donor response recorded successfully",
+  "data": {
+    "requestId": "req-987123",
+    "donorId": "8f8b5a12-...",
+    "status": "ACCEPTED",
+    "etaMinutes": 25,
+    "createdAt": "2026-11-12T12:15:00.000Z"
+  }
+}
+```
+
 ### `GET /requests/{requestId}/matches`
 Execute intelligent matching engine to find compatible donors nearby.
 - **Query Params**:
@@ -149,3 +191,4 @@ Update blood unit inventory counts.
   "unitsAvailable": 22
 }
 ```
+
