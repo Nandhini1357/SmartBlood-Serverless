@@ -1,0 +1,37 @@
+{
+  "name": "smartblood-backend",
+  "version": "1.0.0",
+  "description": "SmartBlood - Serverless Blood Donation Network Backend (AWS Lambda, DynamoDB, API Gateway, SNS, Cognito)",
+  "main": "src/handlers/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "lint": "eslint .",
+    "sam:build": "sam build",
+    "sam:local": "sam local start-api --env-vars env.json"
+  },
+  "keywords": [
+    "aws",
+    "serverless",
+    "lambda",
+    "dynamodb",
+    "api-gateway",
+    "sns",
+    "cognito",
+    "blood-donation",
+    "healthcare"
+  ],
+  "author": "SmartBlood Team",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.750.0",
+    "@aws-sdk/client-dynamodb": "^3.750.0",
+    "@aws-sdk/client-sns": "^3.750.0",
+    "@aws-sdk/lib-dynamodb": "^3.750.0",
+    "aws-jwt-verify": "^4.0.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.20.0"
+  }
+}

@@ -1,0 +1,308 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SmartBlood - Intelligent Serverless Blood Donation Network
+  AWS Serverless Application Model (SAM) Architecture Specification
+
+Globals:
+  Function:
+    Timeout: 15
+    MemorySize: 256
+    Runtime: nodejs20.x
+    Architectures:
+      - arm64
+    Environment:
+      Variables:
+        STAGE: !Ref Stage
+        DYNAMODB_TABLE: !Ref SmartBloodTable
+        SNS_EMERGENCY_TOPIC_ARN: !Ref EmergencyAlertsTopic
+        COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+        COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
+        NODE_OPTIONS: "--enable-source-maps"
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Deployment stage environment
+
+Resources:
+  # ============================================================================
+  # 1. API GATEWAY
+  # ============================================================================
+  SmartBloodApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      Auth:
+        DefaultAuthorizer: CognitoAuth
+        Authorizers:
+          CognitoAuth:
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
+            Identity:
+              Header: Authorization
+
+  # ============================================================================
+  # 2. AMAZON COGNITO AUTHENTICATION
+  # ============================================================================
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "smartblood-users-${Stage}"
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      Schema:
+        - Name: bloodType
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: userRole
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "smartblood-client-${Stage}"
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+
+  # ============================================================================
+  # 3. AMAZON DYNAMODB (Single Table Design)
+  # ============================================================================
+  SmartBloodTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "SmartBlood-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  # ============================================================================
+  # 4. AMAZON SNS (Emergency Broadcast Topic)
+  # ============================================================================
+  EmergencyAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "SmartBlood-EmergencyAlerts-${Stage}"
+      DisplayName: "SmartBlood Emergency Blood Requests"
+
+  # ============================================================================
+  # 5. SERVERLESS LAMBDA HANDLERS
+  # ============================================================================
+
+  # --- Donors Module ---
+  RegisterDonorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/donors/registerDonor.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /donors
+            Method: post
+
+  GetDonorProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/donors/getDonorProfile.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /donors/{donorId}
+            Method: get
+
+  UpdateDonorAvailabilityFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/donors/updateDonorAvailability.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /donors/{donorId}/availability
+            Method: put
+
+  # --- Blood Requests Module ---
+  CreateBloodRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/requests/createBloodRequest.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SmartBloodTable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt EmergencyAlertsTopic.TopicName
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /requests
+            Method: post
+
+  GetBloodRequestsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/requests/getBloodRequests.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /requests
+            Method: get
+            Auth:
+              Authorizer: NONE
+
+  # --- Intelligent Matching Engine ---
+  MatchDonorsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matching/matchDonors.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /requests/{requestId}/matches
+            Method: get
+
+  # --- Emergency Notifications ---
+  SendAlertFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/notifications/sendAlert.handler
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt EmergencyAlertsTopic.TopicName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /notifications/broadcast
+            Method: post
+
+  # --- Blood Bank Inventory Module ---
+  GetInventoryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/bloodBanks/getInventory.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /bloodbanks/{bankId}/inventory
+            Method: get
+
+  UpdateInventoryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/bloodBanks/updateInventory.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /bloodbanks/{bankId}/inventory
+            Method: put
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL for SmartBlood"
+    Value: !Sub "https://${SmartBloodApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/"
+  CognitoUserPoolId:
+    Description: "Cognito User Pool ID"
+    Value: !Ref CognitoUserPool
+  CognitoClientId:
+    Description: "Cognito App Client ID"
+    Value: !Ref CognitoUserPoolClient
+  DynamoDBTableName:
+    Description: "DynamoDB Single Table Name"
+    Value: !Ref SmartBloodTable
+  SNSTopicArn:
+    Description: "Emergency Alerts SNS Topic ARN"
+    Value: !Ref EmergencyAlertsTopic
