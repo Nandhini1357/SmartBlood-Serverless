@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
-import { LiveUrgentFeed } from './components/emergency/LiveUrgentFeed';
-import { DonorDashboard } from './components/dashboard/DonorDashboard';
-import { HospitalDashboard } from './components/dashboard/HospitalDashboard';
+import { LandingPage } from './components/landing/LandingPage';
+import { EmergencyDashboard } from './components/emergency/EmergencyDashboard';
+import { DonorSearch } from './components/search/DonorSearch';
+import { DonorPortal } from './components/portal/DonorPortal';
+import { HospitalDashboard } from './components/hospital/HospitalDashboard';
 import { EmergencyRequestModal } from './components/emergency/EmergencyRequestModal';
 import { bloodApi } from './services/api';
 
 export function App() {
-  const [currentView, setCurrentView] = useState('urgent');
+  const [currentView, setCurrentView] = useState('landing');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,65 +32,73 @@ export function App() {
 
   const handleRequestCreated = (newRequest) => {
     setRequests((prev) => [newRequest, ...prev]);
-    setCurrentView('urgent');
+    setCurrentView('emergency');
   };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Top Navigation */}
       <Navbar
         currentView={currentView}
         onViewChange={setCurrentView}
         onOpenEmergencyModal={() => setIsModalOpen(true)}
       />
 
-      {/* Hero Banner */}
-      <section className="hero-banner">
-        <div className="container">
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', padding: '0.25rem 0.75rem', borderRadius: 9999, border: '1px solid rgba(239, 68, 68, 0.4)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '1rem' }}>
-            <span>⚡ AWS Weekend Challenge – No Pipeline, No Problem</span>
-          </div>
-          <h1 className="hero-title">
-            Intelligent Serverless Blood Donation Network
-          </h1>
-          <p className="hero-subtitle">
-            Connecting critical hospital emergencies to compatible nearby donors in seconds using AWS Lambda, Amazon DynamoDB, Amazon SNS, and API Gateway.
-          </p>
-        </div>
-      </section>
-
-      {/* Main Container */}
-      <main className="container" style={{ flex: 1 }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-            Loading network telemetry...
-          </div>
-        ) : (
-          <>
-            {currentView === 'urgent' && (
-              <LiveUrgentFeed
-                requests={requests}
-                onRequestUpdated={fetchRequests}
-              />
-            )}
-            {currentView === 'donor' && <DonorDashboard />}
-            {currentView === 'hospital' && (
-              <HospitalDashboard onOpenEmergencyModal={() => setIsModalOpen(true)} />
-            )}
-          </>
+      {/* Main Content Area */}
+      <main style={{ flex: 1 }}>
+        {currentView === 'landing' && (
+          <LandingPage
+            onNavigate={setCurrentView}
+            onOpenEmergencyModal={() => setIsModalOpen(true)}
+          />
         )}
+
+        <div className="container" style={{ paddingTop: '2rem' }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-muted)' }}>
+              Loading SmartBlood network telemetry...
+            </div>
+          ) : (
+            <>
+              {currentView === 'emergency' && (
+                <EmergencyDashboard
+                  requests={requests}
+                  onRefresh={fetchRequests}
+                  onOpenEmergencyModal={() => setIsModalOpen(true)}
+                />
+              )}
+
+              {currentView === 'search' && (
+                <DonorSearch
+                  onOpenEmergencyModal={() => setIsModalOpen(true)}
+                />
+              )}
+
+              {currentView === 'donor' && <DonorPortal />}
+
+              {currentView === 'hospital' && (
+                <HospitalDashboard
+                  requests={requests}
+                  onOpenEmergencyModal={() => setIsModalOpen(true)}
+                  onRefreshRequests={fetchRequests}
+                />
+              )}
+            </>
+          )}
+        </div>
       </main>
 
-      {/* Emergency Request Modal */}
+      {/* Global Emergency Modal */}
       <EmergencyRequestModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onRequestCreated={handleRequestCreated}
       />
 
+      {/* Footer */}
       <Footer />
     </div>
   );
 }
 
 export default App;
-
