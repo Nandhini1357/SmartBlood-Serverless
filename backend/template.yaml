@@ -196,6 +196,8 @@ Resources:
             RestApiId: !Ref SmartBloodApi
             Path: /donors/{donorId}
             Method: get
+            Auth:
+              Authorizer: NONE
 
   UpdateDonorAvailabilityFunction:
     Type: AWS::Serverless::Function
@@ -212,6 +214,8 @@ Resources:
             RestApiId: !Ref SmartBloodApi
             Path: /donors/{donorId}/availability
             Method: put
+            Auth:
+              Authorizer: NONE
 
   # --- Blood Requests Module ---
   CreateBloodRequestFunction:

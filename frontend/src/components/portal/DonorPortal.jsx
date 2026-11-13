@@ -74,7 +74,7 @@ export const DonorPortal = () => {
 
     const newStatus = !activeDonor.isAvailable;
     try {
-      await bloodApi.updateDonorAvailability(activeDonor.donorId, newStatus);
+      await bloodApi.updateDonorAvailability(activeDonor.donorId, newStatus, activeDonor.verificationToken);
       const updated = { ...activeDonor, isAvailable: newStatus };
       setActiveDonor(updated);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));

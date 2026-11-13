@@ -168,7 +168,7 @@ export const bloodApi = {
   /**
    * 6. Update Donor Availability
    */
-  async updateDonorAvailability(donorId, isAvailable) {
+  async updateDonorAvailability(donorId, isAvailable, verificationToken = null) {
     if (isMockMode()) {
       const donor = mockDonors.find((d) => d.donorId === donorId);
       if (donor) {
@@ -179,10 +179,31 @@ export const bloodApi = {
     }
 
     const headers = await getAuthHeaders({ 'Content-Type': 'application/json' });
+
+    let token = verificationToken;
+    if (!token) {
+      try {
+        const saved = localStorage.getItem('smartblood_active_donor');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && (parsed.donorId === donorId || !donorId)) {
+            token = parsed.verificationToken;
+          }
+        }
+      } catch (e) {
+        // ignore parse error
+      }
+    }
+
+    if (token) {
+      headers['x-donor-token'] = token;
+      headers['x-verification-token'] = token;
+    }
+
     const res = await fetch(`${API_BASE_URL}/donors/${donorId}/availability`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ isAvailable })
+      body: JSON.stringify({ isAvailable, verificationToken: token })
     });
     return await handleApiResponse(res, `update availability for donor ${donorId}`);
   },
