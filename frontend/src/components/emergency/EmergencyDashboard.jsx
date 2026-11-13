@@ -18,9 +18,10 @@ import { StatusBadge } from '../common/StatusBadge';
 import { DonorResponseModal } from './DonorResponseModal';
 import { bloodApi } from '../../services/api';
 
-export const EmergencyDashboard = ({ requests, onRefresh, onOpenEmergencyModal }) => {
+export const EmergencyDashboard = ({ requests, onRefresh, onOpenEmergencyModal, onOpenAuthModal }) => {
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [matchesMap, setMatchesMap] = useState({});
+  const [matchesErrorMap, setMatchesErrorMap] = useState({});
   const [loadingMatchesId, setLoadingMatchesId] = useState(null);
   const [activeResponseRequest, setActiveResponseRequest] = useState(null);
   const [successToast, setSuccessToast] = useState(null);
@@ -36,11 +37,13 @@ export const EmergencyDashboard = ({ requests, onRefresh, onOpenEmergencyModal }
     // If matches not cached, fetch them
     if (!matchesMap[requestId]) {
       setLoadingMatchesId(requestId);
+      setMatchesErrorMap((prev) => ({ ...prev, [requestId]: null }));
       try {
         const data = await bloodApi.getMatches(requestId, 50);
         setMatchesMap((prev) => ({ ...prev, [requestId]: data }));
       } catch (err) {
         console.error('Failed to get matches for request', err);
+        setMatchesErrorMap((prev) => ({ ...prev, [requestId]: err.message || 'Authorization required' }));
       } finally {
         setLoadingMatchesId(null);
       }
@@ -231,6 +234,21 @@ export const EmergencyDashboard = ({ requests, onRefresh, onOpenEmergencyModal }
                       <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                         Evaluating medical compatibility matrix and calculating Haversine distances...
                       </div>
+                    ) : matchesErrorMap[req.requestId] ? (
+                      <div style={{ padding: '1rem', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontSize: '0.85rem', color: '#92400e', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div>
+                          <strong>🔒 Hospital Staff Access Required:</strong> Viewing matching donor evaluations and distance calculations requires hospital staff authentication via Amazon Cognito.
+                        </div>
+                        {onOpenAuthModal && (
+                          <button
+                            type="button"
+                            onClick={onOpenAuthModal}
+                            style={{ background: '#d97706', color: 'white', border: 'none', borderRadius: 6, padding: '0.35rem 0.75rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                          >
+                            Sign In Now
+                          </button>
+                        )}
+                      </div>
                     ) : matchData?.matches?.length > 0 ? (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
                         {matchData.matches.map((m) => (
@@ -294,3 +312,4 @@ export const EmergencyDashboard = ({ requests, onRefresh, onOpenEmergencyModal }
     </div>
   );
 };
+

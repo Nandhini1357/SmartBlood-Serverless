@@ -89,7 +89,7 @@ export const DonorSearch = ({ onOpenEmergencyModal }) => {
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g. San Francisco or Oakland"
+                placeholder="e.g. New Delhi, Mumbai, or Bengaluru"
                 value={cityFilter}
                 onChange={(e) => setCityFilter(e.target.value)}
               />
@@ -153,7 +153,7 @@ export const DonorSearch = ({ onOpenEmergencyModal }) => {
           </div>
           <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>No Donors Matching Your Filters</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: 450, margin: '0 auto 1.5rem' }}>
-            Try expanding your search radius slider or clearing the city filter to see donors in neighboring counties.
+            Try expanding your search radius slider or clearing the city filter to see donors in neighboring cities or districts.
           </p>
           <button
             onClick={() => { setTargetBloodType('All'); setCityFilter(''); setMaxRadius(100); }}
@@ -213,7 +213,9 @@ export const DonorSearch = ({ onOpenEmergencyModal }) => {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--surface-alt)', padding: '0.65rem 0.85rem', borderRadius: 8, fontSize: '0.85rem', marginBottom: '1rem' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Estimated Proximity:</span>
-                  <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>~{donor.distanceKm} km away</span>
+                  <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                    {donor.distanceKm != null ? `~${donor.distanceKm} km away` : 'City-wide Region'}
+                  </span>
                 </div>
               </div>
 
@@ -244,3 +246,4 @@ export const DonorSearch = ({ onOpenEmergencyModal }) => {
     </div>
   );
 };
+

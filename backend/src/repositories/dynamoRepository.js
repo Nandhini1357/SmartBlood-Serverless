@@ -162,12 +162,21 @@ export const updateItem = async (pk, sk, updateExpression, expressionAttributeNa
     return updated;
   }
 
+  const hasAttrNames =
+    expressionAttributeNames &&
+    typeof expressionAttributeNames === 'object' &&
+    Object.keys(expressionAttributeNames).length > 0;
+  const hasAttrValues =
+    expressionAttributeValues &&
+    typeof expressionAttributeValues === 'object' &&
+    Object.keys(expressionAttributeValues).length > 0;
+
   const command = new UpdateCommand({
     TableName: TABLE_NAME,
     Key: { PK: pk, SK: sk },
     UpdateExpression: updateExpression,
-    ...(expressionAttributeNames ? { ExpressionAttributeNames: expressionAttributeNames } : {}),
-    ...(expressionAttributeValues ? { ExpressionAttributeValues: expressionAttributeValues } : {}),
+    ...(hasAttrNames ? { ExpressionAttributeNames: expressionAttributeNames } : {}),
+    ...(hasAttrValues ? { ExpressionAttributeValues: expressionAttributeValues } : {}),
     ReturnValues: 'ALL_NEW'
   });
   const result = await docClient.send(command);
@@ -188,7 +197,11 @@ export const deleteItem = async (pk, sk) => {
   return await docClient.send(command);
 };
 
-export const scanItems = async (filterExpression = null, exprValues = null) => {
+export const scanItems = async (
+  filterExpression = null,
+  exprValues = null,
+  expressionAttributeNames = null
+) => {
   if (isTestEnv()) {
     const all = Array.from(inMemoryStore.values());
     if (!exprValues) return all;
@@ -205,10 +218,20 @@ export const scanItems = async (filterExpression = null, exprValues = null) => {
     });
   }
 
+  const hasAttrNames =
+    expressionAttributeNames &&
+    typeof expressionAttributeNames === 'object' &&
+    Object.keys(expressionAttributeNames).length > 0;
+  const hasAttrValues =
+    exprValues &&
+    typeof exprValues === 'object' &&
+    Object.keys(exprValues).length > 0;
+
   const command = new ScanCommand({
     TableName: TABLE_NAME,
     ...(filterExpression ? { FilterExpression: filterExpression } : {}),
-    ...(exprValues ? { ExpressionAttributeValues: exprValues } : {})
+    ...(hasAttrNames ? { ExpressionAttributeNames: expressionAttributeNames } : {}),
+    ...(hasAttrValues ? { ExpressionAttributeValues: exprValues } : {})
   });
   const result = await docClient.send(command);
   return result.Items || [];

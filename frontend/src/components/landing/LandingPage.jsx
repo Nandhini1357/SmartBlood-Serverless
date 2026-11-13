@@ -105,9 +105,12 @@ export const LandingPage = ({ onNavigate, onOpenEmergencyModal }) => {
         </div>
       </section>
 
-      {/* Network Live Stats */}
+      {/* Network Live Stats (Simulated Demonstration Metrics) */}
       <section style={{ transform: 'translateY(-2rem)', zIndex: 10, position: 'relative' }}>
         <div className="container">
+          <div style={{ textAlign: 'right', marginBottom: '0.4rem', fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>
+            * Simulated Demonstration Metrics for AWS Weekend Challenge Review
+          </div>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -420,3 +423,4 @@ export const LandingPage = ({ onNavigate, onOpenEmergencyModal }) => {
     </div>
   );
 };
+

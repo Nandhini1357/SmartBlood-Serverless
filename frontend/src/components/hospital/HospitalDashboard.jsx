@@ -15,22 +15,28 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from '../common/StatusBadge';
 import { BLOOD_GROUPS } from '../../utils/bloodTypes';
-import { bloodApi } from '../../services/api';
+import { bloodApi, isMockMode } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
-export const HospitalDashboard = ({ requests, onOpenEmergencyModal, onRefreshRequests }) => {
+export const HospitalDashboard = ({ requests, onOpenEmergencyModal, onRefreshRequests, onOpenAuthModal }) => {
+  const { user, isAuthenticated, isHospitalStaff } = useAuth();
+  const mockActive = isMockMode();
   const [inventory, setInventory] = useState([]);
   const [loadingInventory, setLoadingInventory] = useState(true);
+  const [inventoryError, setInventoryError] = useState(null);
   const [selectedRequestForResponses, setSelectedRequestForResponses] = useState(null);
   const [updatingType, setUpdatingType] = useState(null);
   const [inventoryToast, setInventoryToast] = useState(null);
 
   const fetchInventory = async () => {
     setLoadingInventory(true);
+    setInventoryError(null);
     try {
       const items = await bloodApi.getBankInventory('main-blood-bank');
-      setInventory(items);
+      setInventory(items || []);
     } catch (err) {
       console.error('Failed to load inventory', err);
+      setInventoryError(err.message || 'Failed to fetch inventory from AWS DynamoDB.');
     } finally {
       setLoadingInventory(false);
     }
@@ -38,7 +44,7 @@ export const HospitalDashboard = ({ requests, onOpenEmergencyModal, onRefreshReq
 
   useEffect(() => {
     fetchInventory();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleAdjustUnits = async (bloodType, currentUnits, delta) => {
     const newUnits = Math.max(0, currentUnits + delta);
@@ -51,7 +57,7 @@ export const HospitalDashboard = ({ requests, onOpenEmergencyModal, onRefreshReq
       setInventory((prev) =>
         prev.map((item) => (item.bloodType === bloodType ? { ...item, unitsAvailable: newUnits, status: updated.status } : item))
       );
-      setInventoryToast(`Updated ${bloodType} inventory to ${newUnits} pint(s).`);
+      setInventoryToast(`Updated ${bloodType} inventory to ${newUnits} unit(s).`);
       setTimeout(() => setInventoryToast(null), 3500);
     } catch (err) {
       console.error('Failed to update units', err);
@@ -79,6 +85,70 @@ export const HospitalDashboard = ({ requests, onOpenEmergencyModal, onRefreshReq
           <span>Broadcast Emergency Shortage</span>
         </button>
       </div>
+
+      {/* Security & Authorization Notice Banner */}
+      {!mockActive && !isAuthenticated ? (
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#92400e', fontWeight: 700, fontSize: '0.95rem' }}>
+              <span>🔐</span>
+              <span>Hospital Staff Authentication Required</span>
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#78350f', marginTop: '0.25rem', maxWidth: 650 }}>
+              Live blood bank telemetry, inventory adjustments, and emergency donor response tracking require verified <strong>Cognito User Pool</strong> credentials.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenAuthModal}
+            className="btn-primary"
+            style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+          >
+            Sign In as Hospital Staff
+          </button>
+        </div>
+      ) : isAuthenticated ? (
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.75rem 1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#166534' }}>
+            <span style={{ fontSize: '1rem' }}>✅</span>
+            <span>
+              <strong>Cognito Session Active:</strong> Authenticated as <strong>{user?.email}</strong> ({user?.facilityName || 'Medical Facility'}) &bull; Tenant Isolation Enforced
+            </span>
+          </div>
+          <span style={{ fontSize: '0.75rem', background: '#dcfce7', color: '#15803d', padding: '0.2rem 0.55rem', borderRadius: 4, fontWeight: 700, border: '1px solid #86efac' }}>
+            {user?.role || 'HOSPITAL_STAFF'}
+          </span>
+        </div>
+      ) : (
+        <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 8, padding: '0.75rem 1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#334155' }}>
+            <span style={{ fontSize: '1rem' }}>🔒</span>
+            <span>
+              <strong>Role-Protected Facility Operations:</strong> Emergency broadcast creation, matching analysis, and stock updates require <strong>Cognito Hospital Staff</strong> credentials with server-side facility isolation.
+            </span>
+          </div>
+          <span style={{ fontSize: '0.75rem', background: '#e2e8f0', color: '#475569', padding: '0.2rem 0.5rem', borderRadius: 4, fontWeight: 700 }}>
+            ROLE: HOSPITAL_STAFF
+          </span>
+        </div>
+      )}
+
+      {inventoryError && (
+        <div style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca', padding: '0.85rem 1rem', borderRadius: 8, marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <strong>API Gateway Error:</strong> {inventoryError}
+          </div>
+          {!isAuthenticated && !mockActive && (
+            <button
+              type="button"
+              onClick={onOpenAuthModal}
+              style={{ background: '#b91c1c', color: 'white', border: 'none', borderRadius: 6, padding: '0.35rem 0.75rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+            >
+              Authenticate Now
+            </button>
+          )}
+        </div>
+      )}
 
       {inventoryToast && (
         <div style={{ background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', padding: '0.85rem 1rem', borderRadius: 10, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -147,7 +217,7 @@ export const HospitalDashboard = ({ requests, onOpenEmergencyModal, onRefreshReq
                     <div>
                       <div style={{ fontSize: '1.8rem', fontWeight: 800, lineHeight: 1 }}>
                         {item.unitsAvailable}
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500, marginLeft: '0.25rem' }}>pints</span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500, marginLeft: '0.25rem' }}>units</span>
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                         Min Safe: {item.minSafeUnits || 6}
@@ -378,3 +448,4 @@ export const HospitalDashboard = ({ requests, onOpenEmergencyModal, onRefreshReq
     </div>
   );
 };
+

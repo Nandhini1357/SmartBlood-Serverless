@@ -3,10 +3,20 @@ import { X, CheckCircle, Clock, Heart, AlertCircle, Navigation } from 'lucide-re
 import { bloodApi } from '../../services/api';
 
 export const DonorResponseModal = ({ isOpen, request, onClose, onResponseSubmitted }) => {
-  const [donorName, setDonorName] = useState('Marcus Vance');
+  // Read active donor from localStorage if available
+  const savedDonor = (() => {
+    try {
+      const data = localStorage.getItem('smartblood_active_donor');
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const [donorName, setDonorName] = useState(savedDonor?.name || '');
   const [status, setStatus] = useState('ACCEPTED');
-  const [etaMinutes, setEtaMinutes] = useState(20);
-  const [notes, setNotes] = useState('Driving private vehicle via highway');
+  const [etaMinutes, setEtaMinutes] = useState(15);
+  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -17,13 +27,17 @@ export const DonorResponseModal = ({ isOpen, request, onClose, onResponseSubmitt
     setSubmitting(true);
     setError(null);
 
+    const activeDonorId = savedDonor?.donorId || `donor-${Date.now()}`;
+    const verificationToken = savedDonor?.verificationToken || null;
+
     try {
       const responseData = await bloodApi.respondToRequest(request.requestId, {
-        donorId: `d-user-${Date.now()}`,
+        donorId: activeDonorId,
         donorName,
         status,
         etaMinutes: Number(etaMinutes),
-        notes
+        notes,
+        verificationToken
       });
       onResponseSubmitted(responseData);
       onClose();
@@ -63,9 +77,26 @@ export const DonorResponseModal = ({ isOpen, request, onClose, onResponseSubmitt
               {request.hospitalName}
             </div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginTop: '0.25rem' }}>
-              Required Blood: <strong>Type {request.bloodType}</strong> &bull; Need: <strong>{request.unitsNeeded} pint(s)</strong> &bull; Location: {request.city}
+              Required Blood: <strong>Type {request.bloodType}</strong> &bull; Need: <strong>{request.unitsNeeded} unit(s)</strong> &bull; Location: {request.city}
             </div>
           </div>
+
+          {/* Donor Authorization Context Badge */}
+          {savedDonor ? (
+            <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 8, padding: '0.65rem 0.85rem', marginBottom: '1.25rem', fontSize: '0.8rem', color: '#065f46', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>🛡️</span>
+              <div>
+                <strong>Verified Donor Session:</strong> Responding as enrolled donor <strong>{savedDonor.name}</strong> ({savedDonor.bloodType}). Authorized with unique verification token.
+              </div>
+            </div>
+          ) : (
+            <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, padding: '0.65rem 0.85rem', marginBottom: '1.25rem', fontSize: '0.8rem', color: '#92400e', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>🔒</span>
+              <div>
+                <strong>Verification Notice:</strong> You are responding as a guest. Enrolling in the Donor Portal generates a persistent, verified donor identity token.
+              </div>
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Your Full Name (Registered Donor) *</label>

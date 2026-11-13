@@ -4,7 +4,8 @@ import {
   registerDonor,
   getDonorById,
   updateAvailability,
-  getAvailableDonorsByBloodType
+  getAvailableDonorsByBloodType,
+  listDonors
 } from '../src/services/donorService.js';
 import { clearStore } from '../src/repositories/dynamoRepository.js';
 
@@ -94,5 +95,28 @@ describe('Donor Business Service', () => {
 
     available = await getAvailableDonorsByBloodType('A+');
     assert.strictEqual(available.length, 1);
+  });
+
+  it('should list available donors filtered by blood type and city', async () => {
+    await registerDonor({
+      name: 'Krish Kumaresh',
+      email: 'krish@example.com',
+      phone: '+919876543210',
+      bloodType: 'A+',
+      city: 'Nagercoil'
+    });
+
+    const donorsAll = await listDonors();
+    assert.ok(donorsAll.length >= 1);
+
+    const donorsA = await listDonors({ bloodType: 'A+' });
+    assert.ok(donorsA.some((d) => d.city === 'Nagercoil'));
+
+    const donorsCity = await listDonors({ city: 'Nagercoil' });
+    assert.strictEqual(donorsCity.length, 1);
+    assert.strictEqual(donorsCity[0].city, 'Nagercoil');
+
+    const donorsNonExistent = await listDonors({ city: 'NonExistentCity12345' });
+    assert.strictEqual(donorsNonExistent.length, 0);
   });
 });

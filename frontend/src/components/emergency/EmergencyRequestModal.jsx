@@ -1,59 +1,28 @@
 import React, { useState } from 'react';
-import { X, Send, AlertTriangle, Building2 } from 'lucide-react';
+import { X, Send, AlertTriangle, Building2, ShieldAlert } from 'lucide-react';
 import { BLOOD_GROUPS, URGENCY_LEVELS } from '../../utils/bloodTypes';
-import { bloodApi } from '../../services/api';
+import { bloodApi, isMockMode } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
-const HOSPITAL_PRESETS = [
-  {
-    name: 'San Francisco General Trauma Center',
-    city: 'San Francisco, CA',
-    lat: 37.7558,
-    lon: -122.4047,
-    phone: '+1 (555) 890-1234'
-  },
-  {
-    name: 'Highland Hospital Acute Care',
-    city: 'Oakland, CA',
-    lat: 37.7997,
-    lon: -122.2312,
-    phone: '+1 (555) 789-5678'
-  },
-  {
-    name: 'Stanford University Medical Center',
-    city: 'Palo Alto, CA',
-    lat: 37.4336,
-    lon: -122.1742,
-    phone: '+1 (555) 678-9012'
-  }
-];
+export const EmergencyRequestModal = ({ isOpen, onClose, onRequestCreated, onOpenAuthModal }) => {
+  const { isAuthenticated, user } = useAuth();
+  const mockActive = isMockMode();
 
-export const EmergencyRequestModal = ({ isOpen, onClose, onRequestCreated }) => {
   const [formData, setFormData] = useState({
-    requesterName: 'Dr. Sarah Adams',
-    hospitalName: 'San Francisco General Trauma Center',
+    requesterName: '',
+    hospitalName: user?.facilityName || '',
     bloodType: 'O-',
-    unitsNeeded: 3,
+    unitsNeeded: 2,
     urgencyLevel: 'CRITICAL',
-    city: 'San Francisco, CA',
-    latitude: 37.7558,
-    longitude: -122.4047,
-    contactPhone: '+1 (555) 890-1234'
+    city: '',
+    latitude: 0,
+    longitude: 0,
+    contactPhone: ''
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   if (!isOpen) return null;
-
-  const handleSelectPreset = (preset) => {
-    setFormData((prev) => ({
-      ...prev,
-      hospitalName: preset.name,
-      city: preset.city,
-      latitude: preset.lat,
-      longitude: preset.lon,
-      contactPhone: preset.phone
-    }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,32 +60,43 @@ export const EmergencyRequestModal = ({ isOpen, onClose, onRequestCreated }) => 
             </div>
           )}
 
-          {/* Presets */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Quick Hospital Presets:
-            </span>
-            <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
-              {HOSPITAL_PRESETS.map((p) => (
-                <button
-                  key={p.name}
-                  type="button"
-                  onClick={() => handleSelectPreset(p)}
-                  style={{
-                    fontSize: '0.75rem',
-                    padding: '0.25rem 0.55rem',
-                    borderRadius: 6,
-                    border: '1px solid var(--border)',
-                    background: formData.hospitalName === p.name ? 'var(--primary-light)' : 'var(--surface-subtle)',
-                    color: formData.hospitalName === p.name ? 'var(--primary-dark)' : 'var(--text-main)',
-                    fontWeight: formData.hospitalName === p.name ? 700 : 500
-                  }}
-                >
-                  {p.name.split(' ')[0]} ({p.city.split(',')[0]})
-                </button>
-              ))}
+          {!mockActive && !isAuthenticated ? (
+            <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '0.85rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9a3412', fontSize: '0.83rem' }}>
+                <ShieldAlert size={18} color="#c2410c" />
+                <span>
+                  <strong>Sign-In Required:</strong> Broadcasting to AWS SNS and DynamoDB requires a verified hospital staff Cognito token.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenAuthModal?.();
+                }}
+                style={{
+                  background: 'var(--primary)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '0.4rem 0.8rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Sign In
+              </button>
             </div>
-          </div>
+          ) : (
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.6rem 0.8rem', marginBottom: '1rem', fontSize: '0.8rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>🔒</span>
+              <span>
+                <strong>Authenticated Action:</strong> Creating emergency dispatches is restricted to verified <strong>Hospital Personnel</strong> (Cognito JWT Protected).
+              </span>
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Hospital / Healthcare Facility *</label>
@@ -124,7 +104,7 @@ export const EmergencyRequestModal = ({ isOpen, onClose, onRequestCreated }) => 
               type="text"
               required
               className="form-input"
-              placeholder="e.g. San Francisco General Trauma"
+              placeholder="e.g. AIIMS New Delhi or Apollo Hospitals"
               value={formData.hospitalName}
               onChange={(e) => setFormData({ ...formData, hospitalName: e.target.value })}
             />
@@ -145,7 +125,7 @@ export const EmergencyRequestModal = ({ isOpen, onClose, onRequestCreated }) => 
             </div>
 
             <div className="form-group">
-              <label className="form-label">Units Needed (Pints) *</label>
+              <label className="form-label">Units Needed (Units) *</label>
               <input
                 type="number"
                 min="1"
@@ -178,7 +158,7 @@ export const EmergencyRequestModal = ({ isOpen, onClose, onRequestCreated }) => 
                 type="text"
                 required
                 className="form-input"
-                placeholder="Dr. Johnson / ER Nurse"
+                placeholder="Dr. Sharma / Duty Medical Officer"
                 value={formData.requesterName}
                 onChange={(e) => setFormData({ ...formData, requesterName: e.target.value })}
               />
@@ -190,7 +170,7 @@ export const EmergencyRequestModal = ({ isOpen, onClose, onRequestCreated }) => 
                 type="tel"
                 required
                 className="form-input"
-                placeholder="+1 (555) 000-0000"
+                placeholder="+91 98765 43210"
                 value={formData.contactPhone}
                 onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
               />
@@ -203,6 +183,7 @@ export const EmergencyRequestModal = ({ isOpen, onClose, onRequestCreated }) => 
               type="text"
               required
               className="form-input"
+              placeholder="e.g. New Delhi, DL or Mumbai, MH"
               value={formData.city}
               onChange={(e) => setFormData({ ...formData, city: e.target.value })}
             />
@@ -222,9 +203,14 @@ export const EmergencyRequestModal = ({ isOpen, onClose, onRequestCreated }) => 
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || (!mockActive && !isAuthenticated)}
               className="btn-emergency"
-              style={{ padding: '0.65rem 1.35rem', fontSize: '0.9rem' }}
+              style={{
+                padding: '0.65rem 1.35rem',
+                fontSize: '0.9rem',
+                opacity: (!mockActive && !isAuthenticated) ? 0.6 : 1,
+                cursor: (!mockActive && !isAuthenticated) ? 'not-allowed' : 'pointer'
+              }}
             >
               <Send size={16} />
               <span>{submitting ? 'Broadcasting via SNS...' : 'Broadcast Emergency'}</span>

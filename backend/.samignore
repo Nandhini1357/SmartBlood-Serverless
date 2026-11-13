@@ -1,0 +1,7 @@
+test/
+.env*
+*.md
+.eslintrc*
+.gitignore
+package-lock.json
+

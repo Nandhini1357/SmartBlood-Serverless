@@ -3,6 +3,8 @@
  * Implements strict Single-Table partition and sort key strategies.
  */
 
+import crypto from 'node:crypto';
+
 export const createDonorEntity = ({
   donorId,
   name,
@@ -13,7 +15,8 @@ export const createDonorEntity = ({
   latitude = 0,
   longitude = 0,
   isAvailable = true,
-  lastDonationDate = null
+  lastDonationDate = null,
+  verificationToken = null
 }) => ({
   PK: `DONOR#${donorId}`,
   SK: 'PROFILE',
@@ -21,6 +24,7 @@ export const createDonorEntity = ({
   GSI1SK: `STATUS#${isAvailable ? 'AVAILABLE' : 'UNAVAILABLE'}`,
   entityType: 'DONOR',
   donorId,
+  verificationToken: verificationToken || crypto.randomUUID(),
   name,
   email,
   phone,
@@ -38,6 +42,7 @@ export const createDonorEntity = ({
 export const createBloodRequestEntity = ({
   requestId,
   requesterId = 'ANONYMOUS',
+  hospitalId = null,
   requesterName,
   hospitalName,
   bloodType,
@@ -56,6 +61,7 @@ export const createBloodRequestEntity = ({
   entityType: 'BLOOD_REQUEST',
   requestId,
   requesterId,
+  hospitalId,
   requesterName,
   hospitalName,
   bloodType: bloodType.toUpperCase(),
@@ -137,4 +143,47 @@ export const sanitizeDonorProfile = (donor) => {
   if (!donor) return null;
   const { PK, SK, GSI1PK, GSI1SK, entityType, ...safeProfile } = donor;
   return safeProfile;
+};
+
+/**
+ * Strips internal and sensitive fields for public emergency broadcast feed.
+ */
+export const sanitizePublicBloodRequest = (request) => {
+  if (!request) return null;
+  return {
+    requestId: request.requestId,
+    hospitalName: request.hospitalName,
+    city: request.city,
+    bloodType: request.bloodType,
+    unitsNeeded: request.unitsNeeded,
+    urgencyLevel: request.urgencyLevel,
+    contactPhone: request.contactPhone,
+    status: request.status,
+    responsesCount: request.responsesCount || 0,
+    createdAt: request.createdAt
+  };
+};
+
+/**
+ * Sanitizes donor response for public request details feed.
+ * Never leaks donor phone, email, or coordinates. Masks donor personal name.
+ */
+export const sanitizePublicDonorResponse = (response) => {
+  if (!response) return null;
+  const nameParts = response.donorName ? response.donorName.trim().split(/\s+/) : [];
+  const maskedName =
+    nameParts.length > 1
+      ? `${nameParts[0]} ${nameParts[1][0]}.`
+      : nameParts[0] || 'Verified Donor';
+
+  return {
+    requestId: response.requestId,
+    donorId: response.donorId,
+    displayName: maskedName,
+    bloodType: response.bloodType,
+    status: response.status,
+    etaMinutes: response.etaMinutes,
+    notes: response.notes || '',
+    createdAt: response.createdAt
+  };
 };

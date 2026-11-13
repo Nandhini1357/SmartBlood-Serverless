@@ -7,7 +7,17 @@ import { isValidBloodType } from '../utils/bloodCompatibility.js';
 
 export const getBankInventory = async (bankId) => {
   const items = await queryByPk(`BANK#${bankId}`, 'INVENTORY#');
-  return items;
+  if (items && items.length > 0) {
+    return items;
+  }
+  const BLOOD_TYPES = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'];
+  return BLOOD_TYPES.map((bType) => ({
+    bankId,
+    bloodType: bType,
+    unitsAvailable: 0,
+    minSafeUnits: 6,
+    status: 'Critical'
+  }));
 };
 
 export const updateBankInventory = async (bankId, payload) => {

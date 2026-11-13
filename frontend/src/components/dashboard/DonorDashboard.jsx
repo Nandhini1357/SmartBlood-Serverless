@@ -5,13 +5,13 @@ import { bloodApi } from '../../services/api';
 
 export const DonorDashboard = () => {
   const [donorForm, setDonorForm] = useState({
-    name: 'Jane Foster',
-    email: 'jane.foster@example.com',
-    phone: '+1 (555) 321-9988',
-    bloodType: 'O-',
-    city: 'San Francisco, CA',
-    latitude: 37.7749,
-    longitude: -122.4194,
+    name: '',
+    email: '',
+    phone: '',
+    bloodType: 'O+',
+    city: '',
+    latitude: 28.6139,
+    longitude: 77.2090,
     isAvailable: true
   });
   const [registered, setRegistered] = useState(false);
@@ -62,6 +62,7 @@ export const DonorDashboard = () => {
                 type="text"
                 required
                 className="form-input"
+                placeholder="e.g. Rahul Sharma"
                 value={donorForm.name}
                 onChange={(e) => setDonorForm({ ...donorForm, name: e.target.value })}
               />
@@ -88,6 +89,7 @@ export const DonorDashboard = () => {
                 type="email"
                 required
                 className="form-input"
+                placeholder="e.g. rahul.sharma@example.com"
                 value={donorForm.email}
                 onChange={(e) => setDonorForm({ ...donorForm, email: e.target.value })}
               />
@@ -99,6 +101,7 @@ export const DonorDashboard = () => {
                 type="tel"
                 required
                 className="form-input"
+                placeholder="+91 98765 43210"
                 value={donorForm.phone}
                 onChange={(e) => setDonorForm({ ...donorForm, phone: e.target.value })}
               />
@@ -111,6 +114,7 @@ export const DonorDashboard = () => {
               type="text"
               required
               className="form-input"
+              placeholder="e.g. New Delhi, Mumbai, or Bengaluru"
               value={donorForm.city}
               onChange={(e) => setDonorForm({ ...donorForm, city: e.target.value })}
             />

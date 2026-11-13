@@ -47,7 +47,7 @@ export const updateAvailability = async (donorId, isAvailable) => {
     `DONOR#${donorId.trim()}`,
     'PROFILE',
     'SET isAvailable = :avail, GSI1SK = :gsi1sk, updatedAt = :updatedAt',
-    {},
+    null,
     {
       ':avail': isAvailable,
       ':gsi1sk': `STATUS#${newStatus}`,
@@ -61,4 +61,24 @@ export const updateAvailability = async (donorId, isAvailable) => {
 export const getAvailableDonorsByBloodType = async (bloodType) => {
   if (!bloodType) return [];
   return await queryGsi1(`BLOOD#${bloodType.toUpperCase().trim()}`, 'STATUS#AVAILABLE');
+};
+
+export const listDonors = async ({ bloodType = null, city = null } = {}) => {
+  const VALID_BLOOD_TYPES = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'];
+  let donors = [];
+
+  if (bloodType && VALID_BLOOD_TYPES.includes(bloodType.toUpperCase().trim())) {
+    donors = await getAvailableDonorsByBloodType(bloodType);
+  } else {
+    const queries = VALID_BLOOD_TYPES.map((bType) => getAvailableDonorsByBloodType(bType));
+    const results = await Promise.all(queries);
+    donors = results.flat();
+  }
+
+  if (city && typeof city === 'string' && city.trim()) {
+    const cityLower = city.trim().toLowerCase();
+    donors = donors.filter((d) => d.city && d.city.toLowerCase().includes(cityLower));
+  }
+
+  return donors;
 };

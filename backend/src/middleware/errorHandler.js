@@ -1,7 +1,7 @@
 /**
  * SmartBlood - Centralized Lambda Error Handling Middleware
  */
-import { badRequest, unauthorized, notFound, internalError } from '../utils/response.js';
+import { badRequest, unauthorized, forbidden, notFound, internalError } from '../utils/response.js';
 
 export const withErrorHandler = (handlerFn) => {
   return async (event, context) => {
@@ -14,6 +14,10 @@ export const withErrorHandler = (handlerFn) => {
 
       if (error.name === 'UnauthorizedError') {
         return unauthorized(error.message);
+      }
+
+      if (error.name === 'ForbiddenError') {
+        return forbidden(error.message);
       }
 
       if (error.name === 'NotFoundError') {

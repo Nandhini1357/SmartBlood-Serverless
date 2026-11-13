@@ -47,7 +47,13 @@ export const validateEmail = (email) => {
 };
 
 export const validatePhone = (phone) => {
-  if (!phone || !PHONE_REGEX.test(phone.trim())) {
+  if (!phone || typeof phone !== 'string') {
+    const error = new Error(`Invalid phone number format: ${phone}`);
+    error.name = 'ValidationError';
+    throw error;
+  }
+  const digitsOnly = phone.replace(/[\s\-\(\)\.]/g, '');
+  if (!/^\+?[1-9]\d{6,14}$/.test(digitsOnly)) {
     const error = new Error(`Invalid phone number format: ${phone}`);
     error.name = 'ValidationError';
     throw error;

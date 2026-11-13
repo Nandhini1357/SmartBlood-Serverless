@@ -8,7 +8,7 @@ Globals:
   Function:
     Timeout: 15
     MemorySize: 256
-    Runtime: nodejs20.x
+    Runtime: nodejs22.x
     Architectures:
       - arm64
     Environment:
@@ -37,9 +37,10 @@ Resources:
       StageName: !Ref Stage
       Cors:
         AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-donor-token,x-verification-token'"
         AllowOrigin: "'*'"
       Auth:
+        AddDefaultAuthorizerToCorsPreflight: false
         DefaultAuthorizer: CognitoAuth
         Authorizers:
           CognitoAuth:
@@ -71,6 +72,14 @@ Resources:
           Mutable: true
           Required: false
         - Name: userRole
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: hospitalId
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: facilityName
           AttributeDataType: String
           Mutable: true
           Required: false
@@ -139,8 +148,8 @@ Resources:
   RegisterDonorFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/donors/registerDonor.handler
+      CodeUri: .
+      Handler: src/handlers/donors/registerDonor.handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref SmartBloodTable
@@ -151,12 +160,32 @@ Resources:
             RestApiId: !Ref SmartBloodApi
             Path: /donors
             Method: post
+            Auth:
+              Authorizer: NONE
+
+  SearchDonorsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/donors/searchDonors.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SmartBloodTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SmartBloodApi
+            Path: /donors
+            Method: get
+            Auth:
+              Authorizer: NONE
 
   GetDonorProfileFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/donors/getDonorProfile.handler
+      CodeUri: .
+      Handler: src/handlers/donors/getDonorProfile.handler
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref SmartBloodTable
@@ -171,8 +200,8 @@ Resources:
   UpdateDonorAvailabilityFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/donors/updateDonorAvailability.handler
+      CodeUri: .
+      Handler: src/handlers/donors/updateDonorAvailability.handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref SmartBloodTable
@@ -188,8 +217,8 @@ Resources:
   CreateBloodRequestFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/requests/createBloodRequest.handler
+      CodeUri: .
+      Handler: src/handlers/requests/createBloodRequest.handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref SmartBloodTable
@@ -206,8 +235,8 @@ Resources:
   GetBloodRequestsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/requests/getBloodRequests.handler
+      CodeUri: .
+      Handler: src/handlers/requests/getBloodRequests.handler
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref SmartBloodTable
@@ -224,8 +253,8 @@ Resources:
   GetBloodRequestDetailsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/requests/getRequestDetails.handler
+      CodeUri: .
+      Handler: src/handlers/requests/getRequestDetails.handler
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref SmartBloodTable
@@ -242,8 +271,8 @@ Resources:
   RespondToRequestFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/requests/respondToRequest.handler
+      CodeUri: .
+      Handler: src/handlers/requests/respondToRequest.handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref SmartBloodTable
@@ -254,13 +283,15 @@ Resources:
             RestApiId: !Ref SmartBloodApi
             Path: /requests/{requestId}/respond
             Method: post
+            Auth:
+              Authorizer: NONE
 
   # --- Intelligent Matching Engine ---
   MatchDonorsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/matching/matchDonors.handler
+      CodeUri: .
+      Handler: src/handlers/matching/matchDonors.handler
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref SmartBloodTable
@@ -276,8 +307,8 @@ Resources:
   SendAlertFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/notifications/sendAlert.handler
+      CodeUri: .
+      Handler: src/handlers/notifications/sendAlert.handler
       Policies:
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt EmergencyAlertsTopic.TopicName
@@ -295,8 +326,8 @@ Resources:
   GetInventoryFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/bloodBanks/getInventory.handler
+      CodeUri: .
+      Handler: src/handlers/bloodBanks/getInventory.handler
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref SmartBloodTable
@@ -307,12 +338,14 @@ Resources:
             RestApiId: !Ref SmartBloodApi
             Path: /bloodbanks/{bankId}/inventory
             Method: get
+            Auth:
+              Authorizer: NONE
 
   UpdateInventoryFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
-      Handler: handlers/bloodBanks/updateInventory.handler
+      CodeUri: .
+      Handler: src/handlers/bloodBanks/updateInventory.handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref SmartBloodTable
@@ -323,6 +356,29 @@ Resources:
             RestApiId: !Ref SmartBloodApi
             Path: /bloodbanks/{bankId}/inventory
             Method: put
+
+  # ============================================================================
+  # 6. API GATEWAY RESPONSES (CORS for 4XX / 5XX)
+  # ============================================================================
+  ApiGatewayResponseDefault4XX:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      ResponseType: DEFAULT_4XX
+      RestApiId: !Ref SmartBloodApi
+
+  ApiGatewayResponseDefault5XX:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      ResponseType: DEFAULT_5XX
+      RestApiId: !Ref SmartBloodApi
 
 Outputs:
   ApiEndpoint:

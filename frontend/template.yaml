@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SmartBlood - Frontend Hosting Infrastructure
+  Amazon S3 (Private, Region ap-southeast-2) + Amazon CloudFront (OAC, HTTPS, CloudFront Function SPA Routing)
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    Description: Environment stage name
+
+Resources:
+  # ============================================================================
+  # 1. Amazon S3 - Private Bucket for Frontend Assets (ap-southeast-2)
+  # ============================================================================
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "smartblood-frontend-${AWS::AccountId}-${Stage}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  # ============================================================================
+  # 2. CloudFront Origin Access Control (OAC)
+  # ============================================================================
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "smartblood-frontend-oac-${Stage}"
+        Description: "Origin Access Control for SmartBlood frontend S3 bucket"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ============================================================================
+  # 3. CloudFront Function - Precise SPA Client-Side URL Rewrite
+  # Prevents missing static assets (.js, .css) from mistakenly returning index.html
+  # ============================================================================
+  SpaRewriteFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub "smartblood-spa-rewrite-${Stage}"
+      AutoPublish: true
+      FunctionConfig:
+        Comment: "Rewrites SPA navigation routes to index.html while preserving static file extensions"
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var uri = request.uri;
+          // Check if URI is a route without file extension (e.g. /hospital, /emergency, /)
+          if (uri.endsWith('/') || !uri.includes('.')) {
+            request.uri = '/index.html';
+          }
+          return request;
+        }
+
+  # ============================================================================
+  # 4. Amazon CloudFront Distribution (HTTPS, OAC, Edge Routing)
+  # ============================================================================
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub "SmartBlood Frontend CDN (${Stage})"
+        Enabled: true
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_All
+        HttpVersion: http2and3
+        Origins:
+          - Id: S3FrontendOrigin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
+            S3OriginConfig: {}
+        DefaultCacheBehavior:
+          TargetOriginId: S3FrontendOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          # AWS Managed-CachingOptimized Cache Policy
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          Compress: true
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt SpaRewriteFunction.FunctionMetadata.FunctionARN
+
+  # ============================================================================
+  # 5. S3 Bucket Policy - Restrict Access to CloudFront Service Principal
+  # ============================================================================
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipalReadOnly
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action:
+              - s3:GetObject
+              - s3:ListBucket
+            Resource:
+              - !Sub "${FrontendBucket.Arn}/*"
+              - !Sub "${FrontendBucket.Arn}"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+Outputs:
+  FrontendBucketName:
+    Description: Name of the private S3 bucket hosting frontend assets
+    Value: !Ref FrontendBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketName"
+
+  CloudFrontDistributionId:
+    Description: CloudFront Distribution ID
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub "${AWS::StackName}-DistributionId"
+
+  CloudFrontDomainName:
+    Description: CloudFront distribution domain name
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-DomainName"
+
+  WebsiteUrl:
+    Description: HTTPS URL of the SmartBlood Web Application
+    Value: !Sub "https://${CloudFrontDistribution.DomainName}"

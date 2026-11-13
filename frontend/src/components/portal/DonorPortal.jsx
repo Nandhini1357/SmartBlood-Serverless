@@ -21,13 +21,13 @@ const STORAGE_KEY = 'smartblood_active_donor';
 
 export const DonorPortal = () => {
   const [formData, setFormData] = useState({
-    name: 'Marcus Vance',
-    email: 'marcus.vance@example.org',
-    phone: '+1 (555) 234-5601',
+    name: '',
+    email: '',
+    phone: '',
     bloodType: 'O-',
-    city: 'San Francisco, CA',
-    latitude: 37.7749,
-    longitude: -122.4194,
+    city: '',
+    latitude: 0,
+    longitude: 0,
     isAvailable: true
   });
 
@@ -340,7 +340,7 @@ export const DonorPortal = () => {
                   type="tel"
                   required
                   className="form-input"
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="+91 98765 43210"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
@@ -353,35 +353,10 @@ export const DonorPortal = () => {
                 type="text"
                 required
                 className="form-input"
-                placeholder="e.g. San Francisco, CA"
+                placeholder="e.g. New Delhi, Mumbai, or Bengaluru"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
               />
-              {/* Quick Picks for Demo */}
-              <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', alignSelf: 'center' }}>Demo Quick Pick:</span>
-                <button
-                  type="button"
-                  onClick={() => handleQuickCitySelect('San Francisco, CA', 37.7749, -122.4194)}
-                  style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', background: 'var(--surface-subtle)', borderRadius: 6, border: '1px solid var(--border)' }}
-                >
-                  San Francisco
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickCitySelect('Oakland, CA', 37.8044, -122.2712)}
-                  style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', background: 'var(--surface-subtle)', borderRadius: 6, border: '1px solid var(--border)' }}
-                >
-                  Oakland
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickCitySelect('San Jose, CA', 37.3382, -121.8863)}
-                  style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', background: 'var(--surface-subtle)', borderRadius: 6, border: '1px solid var(--border)' }}
-                >
-                  San Jose
-                </button>
-              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -407,17 +382,32 @@ export const DonorPortal = () => {
               </div>
             </div>
 
-            <div style={{ background: 'var(--surface-alt)', border: '1px solid var(--border)', borderRadius: 10, padding: '1rem', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <input
-                type="checkbox"
-                id="availCheck"
-                style={{ width: 18, height: 18, accentColor: 'var(--primary)' }}
-                checked={formData.isAvailable}
-                onChange={(e) => setFormData({ ...formData, isAvailable: e.target.checked })}
-              />
-              <label htmlFor="availCheck" style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', cursor: 'pointer' }}>
-                Set my status as available immediately upon registration
-              </label>
+            <div style={{ background: 'var(--surface-alt)', border: '1px solid var(--border)', borderRadius: 10, padding: '1rem', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <input
+                  type="checkbox"
+                  id="availCheck"
+                  style={{ width: 18, height: 18, accentColor: 'var(--primary)' }}
+                  checked={formData.isAvailable}
+                  onChange={(e) => setFormData({ ...formData, isAvailable: e.target.checked })}
+                />
+                <label htmlFor="availCheck" style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', cursor: 'pointer' }}>
+                  Set my readiness status as available immediately upon registration
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
+                <input
+                  type="checkbox"
+                  id="consentCheck"
+                  required
+                  defaultChecked
+                  style={{ width: 18, height: 18, accentColor: 'var(--primary)', marginTop: '0.15rem' }}
+                />
+                <label htmlFor="consentCheck" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', lineHeight: 1.4 }}>
+                  <strong style={{ color: 'var(--text-main)' }}>Emergency Notification Consent:</strong> I agree to receive urgent SMS notifications via Amazon SNS when a verified hospital in my region requests compatible blood. I understand I can pause or revoke alerts at any time via this portal.
+                </label>
+              </div>
             </div>
 
             <div style={{ marginTop: '1.75rem', display: 'flex', justifyContent: 'flex-end' }}>
@@ -437,3 +427,4 @@ export const DonorPortal = () => {
     </div>
   );
 };
+

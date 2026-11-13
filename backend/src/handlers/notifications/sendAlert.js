@@ -1,9 +1,13 @@
 import { withErrorHandler } from '../../middleware/errorHandler.js';
 import { parseBody, requireFields } from '../../middleware/validator.js';
+import { requireHospitalStaff } from '../../middleware/authMiddleware.js';
 import { broadcastEmergencyAlert } from '../../services/notificationService.js';
 import { success } from '../../utils/response.js';
 
 export const handler = withErrorHandler(async (event) => {
+  // Enforce hospital/admin role for broadcast notifications
+  requireHospitalStaff(event);
+
   const body = parseBody(event);
   requireFields(body, ['bloodType', 'unitsNeeded', 'hospitalName', 'city', 'contactPhone']);
 

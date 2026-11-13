@@ -62,6 +62,9 @@ export const listBloodRequests = async (statusFilter = null) => {
       {
         ':entityType': 'BLOOD_REQUEST',
         ':status': statusFilter.toUpperCase().trim()
+      },
+      {
+        '#status': 'status'
       }
     );
   }
@@ -99,7 +102,7 @@ export const recordDonorResponse = async (requestId, payload) => {
       `REQUEST#${requestId}`,
       'DETAILS',
       'SET responsesCount = if_not_exists(responsesCount, :zero) + :inc, updatedAt = :updatedAt',
-      {},
+      null,
       {
         ':zero': 0,
         ':inc': 1,

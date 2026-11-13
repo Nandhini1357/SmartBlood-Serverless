@@ -57,3 +57,9 @@ coverage/
 .temp/
 tmp/
 
+# Agent configuration rules
+.agents/
+AGENTS.md
+GEMINI.md
+
+

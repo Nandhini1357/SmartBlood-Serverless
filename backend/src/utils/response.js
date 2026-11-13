@@ -46,6 +46,17 @@ export const unauthorized = (message = 'Unauthorized') => ({
   })
 });
 
+export const forbidden = (message = 'Forbidden') => ({
+  statusCode: 403,
+  headers: CORS_HEADERS,
+  body: JSON.stringify({
+    success: false,
+    error: 'Forbidden',
+    message,
+    timestamp: new Date().toISOString()
+  })
+});
+
 export const notFound = (message = 'Resource not found') => ({
   statusCode: 404,
   headers: CORS_HEADERS,
